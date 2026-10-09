@@ -1,0 +1,11 @@
+{
+    "host": "localhost",
+    "port": 3050,
+    "database": "C:/REGOS БАЗА/REGOS.FDB",
+    "user": "SYSDBA",
+    "password": "masterkey",
+    "price_type": 1,
+    "check_time": 10,
+    "sqlite_path": "data/prices.sqlite",
+    "listen_port": 3000
+}

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+backend/data/
+backend/logs/
+installer/staging/
+installer/output/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
