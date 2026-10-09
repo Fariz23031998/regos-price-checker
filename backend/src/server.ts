@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import express from "express";
+import multer from "multer";
 import {
   getConfig,
   getConfigError,
@@ -17,6 +18,15 @@ import {
 import { applyPriceFormula } from "./formula";
 import { errorMessage, log } from "./logger";
 import { ServerRuntime } from "./listen";
+import {
+  findMedia,
+  IMAGE_BYTE_LIMIT,
+  mediaDir,
+  MediaKind,
+  removeStoredMedia,
+  storeUploadedFile,
+  VIDEO_BYTE_LIMIT,
+} from "./media";
 import { backendRoot } from "./paths";
 import {
   commitDatabaseSwap,
@@ -189,6 +199,9 @@ export function createApp(syncService: SyncService, runtime: ServerRuntime): exp
     }
   });
 
+  registerMedia(api, "background", "background_image", IMAGE_BYTE_LIMIT);
+  registerMedia(api, "idle", "idle_media", VIDEO_BYTE_LIMIT);
+
   api.use((_req, res) => {
     res.status(404).json({ error: "Not found" });
   });
@@ -208,6 +221,92 @@ export function createApp(syncService: SyncService, runtime: ServerRuntime): exp
   }
 
   return app;
+}
+
+function mediaUploader(limit: number) {
+  const upload = multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, callback) => {
+        try {
+          fs.mkdirSync(mediaDir(), { recursive: true });
+          callback(null, mediaDir());
+        } catch (error) {
+          callback(error instanceof Error ? error : new Error("Не удалось сохранить файл"), "");
+        }
+      },
+      filename: (_req, _file, callback) => {
+        callback(null, `.upload-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+      },
+    }),
+    limits: { fileSize: limit, files: 1 },
+  }).single("file");
+
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    upload(req, res, (error: unknown) => {
+      if (!error) {
+        next();
+        return;
+      }
+      if (req.file && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch {
+          // The rejected upload cannot be stored.
+        }
+      }
+      const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+      res.status(400).json({ error: code === "LIMIT_FILE_SIZE" ? "Файл слишком большой" : errorMessage(error) });
+    });
+  };
+}
+
+function registerMedia(
+  api: express.Router,
+  kind: MediaKind,
+  tokenKey: "background_image" | "idle_media",
+  limit: number,
+): void {
+  api.post(`/media/${kind}`, mediaUploader(limit), (req, res) => {
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({ error: "Выберите файл" });
+      return;
+    }
+    try {
+      const token = storeUploadedFile(kind, file.path, file.mimetype, file.originalname, file.size);
+      res.json({ [tokenKey]: token });
+    } catch (error) {
+      try {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      } catch {
+        // The rejected upload cannot be stored.
+      }
+      res.status(400).json({ error: errorMessage(error) });
+    }
+  });
+
+  api.delete(`/media/${kind}`, (_req, res) => {
+    try {
+      removeStoredMedia(kind);
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(400).json({ error: errorMessage(error) });
+    }
+  });
+
+  api.get(`/media/${kind}`, (_req, res) => {
+    const found = findMedia(kind);
+    if (!found) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    res.setHeader("Cache-Control", "no-cache");
+    res.type(found.mime);
+    res.sendFile(found.filePath, (error) => {
+      if (!error || res.headersSent) return;
+      res.status(404).json({ error: "Not found" });
+    });
+  });
 }
 
 function adminPayload(runtime: ServerRuntime, warning: string | null = null) {

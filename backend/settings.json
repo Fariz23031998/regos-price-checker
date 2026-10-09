@@ -1,12 +1,17 @@
 {
     "sync_time": 10,
-    "name_font_size": 70,
-    "price_font_size": 200,
-    "background_color": "#00cf03",
+    "name_font_size": 30,
+    "price_font_size": 60,
+    "background_color": "#000",
     "name_font_color": "#fff",
     "price_font_color": "#fff",
     "update_screen_time": 15,
     "show_image": true,
     "price_formula_enabled": true,
-    "price_formula": "Math.ceil(price)"
+    "price_formula": "Math.ceil(price)",
+    "price_prefix": "",
+    "price_suffix": "",
+    "background_image": "",
+    "idle_media": "",
+    "language": "uz"
 }

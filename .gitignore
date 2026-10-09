@@ -2,6 +2,7 @@ node_modules/
 dist/
 backend/data/
 backend/logs/
+backend/media/
 installer/staging/
 installer/output/
 *.sqlite

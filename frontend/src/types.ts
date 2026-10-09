@@ -1,3 +1,5 @@
+import type { Language } from "./i18n";
+
 export interface AppConfig {
   host: string;
   port: number;
@@ -30,6 +32,11 @@ export interface DisplaySettings {
   show_image: boolean;
   price_formula_enabled: boolean;
   price_formula: string;
+  price_prefix: string;
+  price_suffix: string;
+  background_image: string;
+  idle_media: string;
+  language: Language;
 }
 
 export interface ConnectionSettings {
@@ -77,13 +84,9 @@ export const DEFAULT_SETTINGS: DisplaySettings = {
   show_image: true,
   price_formula_enabled: false,
   price_formula: "",
+  price_prefix: "",
+  price_suffix: "",
+  background_image: "",
+  idle_media: "",
+  language: "ru",
 };
-
-export const PRICE_FORMULA_HINT = "Переменные: price и exchangeRate.USD";
-
-export const SCAN_PROMPT = "СКАНИРУЙТЕ ШТРИХКОД";
-export const NOT_FOUND = "Товар не найдено!";
-export const NO_PRICE = "Цена не указано!";
-export const UPDATED = "Данные Обновились";
-export const CONNECTION_ERROR = "Не получается подключится к базу данных...";
-export const NO_DATA = "Нет данных. Проверьте соединение с базой данных.";

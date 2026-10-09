@@ -143,7 +143,12 @@ Write-Utf8NoBom -Path (Join-Path $backendStage "settings.json") -Text @"
     "update_screen_time": 15,
     "show_image": true,
     "price_formula_enabled": false,
-    "price_formula": ""
+    "price_formula": "",
+    "price_prefix": "",
+    "price_suffix": "",
+    "background_image": "",
+    "idle_media": "",
+    "language": "ru"
 }
 
 "@

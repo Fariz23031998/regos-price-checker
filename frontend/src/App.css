@@ -1,12 +1,19 @@
 .app {
+  position: relative;
+  height: 100%;
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: #000000;
+  background-color: #000000;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
 .stage {
+  position: relative;
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -14,6 +21,36 @@
   gap: 24px;
   padding: 32px 24px;
   overflow: auto;
+}
+
+.stage-idle {
+  padding: 0;
+  overflow: hidden;
+}
+
+.idle-media {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.idle-prompt {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--name-color);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
 }
 
 .product-image {
@@ -43,25 +80,33 @@
 }
 
 .barcode-bar {
+  position: absolute;
+  z-index: 3;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
   display: flex;
-  justify-content: flex-start;
-  padding: 0 12px 16px;
+  margin: 0;
+  padding: 0;
 }
 
 .barcode-input {
   width: min(500px, 100%);
-  height: 30px;
+  height: 44px;
   border: none;
+  border-radius: 6px;
   outline: none;
-  background: transparent;
-  color: var(--name-color);
+  background: #ffffff;
+  color: #111111;
+  padding: 0 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
   font-family: Arial, Helvetica, sans-serif;
   font-size: 18px;
 }
 
 .barcode-input::placeholder {
-  color: var(--name-color);
-  opacity: 0.75;
+  color: #666666;
+  opacity: 1;
 }
 
 .overlay {
@@ -105,6 +150,7 @@
 }
 
 .form-grid input,
+.form-grid select,
 .form-grid button {
   font: inherit;
   font-size: 16px;
@@ -112,9 +158,11 @@
   box-sizing: border-box;
 }
 
-.form-grid input {
+.form-grid input,
+.form-grid select {
   width: 100%;
   padding: 6px 8px;
+  background: #ffffff;
 }
 
 .form-grid input[type="checkbox"] {
@@ -132,6 +180,24 @@
 .form-hint {
   margin: 0;
   font-size: 14px;
+}
+
+.media-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.media-preview {
+  max-width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  background: #111111;
+}
+
+.media-field button {
+  min-width: 120px;
 }
 
 .form-error {

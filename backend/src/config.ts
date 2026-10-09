@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { assertPriceFormula } from "./formula";
 import { errorMessage, log } from "./logger";
+import { MediaKind, normalizeMediaToken } from "./media";
 import { backendRoot } from "./paths";
 import { getExchangeRates } from "./sqlite";
 
@@ -17,6 +18,8 @@ export interface AppConfig {
   listen_port: number;
 }
 
+export type Language = "uz" | "ru" | "en";
+
 export interface DisplaySettings {
   sync_time: number;
   name_font_size: number;
@@ -28,6 +31,11 @@ export interface DisplaySettings {
   show_image: boolean;
   price_formula_enabled: boolean;
   price_formula: string;
+  price_prefix: string;
+  price_suffix: string;
+  background_image: string;
+  idle_media: string;
+  language: Language;
 }
 
 export interface ConnectionSettings {
@@ -61,6 +69,11 @@ export const DEFAULT_SETTINGS: DisplaySettings = {
   show_image: true,
   price_formula_enabled: false,
   price_formula: "",
+  price_prefix: "",
+  price_suffix: "",
+  background_image: "",
+  idle_media: "",
+  language: "ru",
 };
 
 let currentConfig: AppConfig = { ...DEFAULT_CONFIG };
@@ -92,6 +105,10 @@ function integer(value: unknown, fallback: number, min: number, max: number): nu
   const numeric = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
   if (!Number.isInteger(numeric) || numeric < min || numeric > max) return fallback;
   return numeric;
+}
+
+function language(value: unknown): Language {
+  return value === "uz" || value === "en" ? value : "ru";
 }
 
 function flag(value: unknown, fallback: boolean): boolean {
@@ -129,12 +146,22 @@ function normalizeSettings(value: unknown): DisplaySettings {
     show_image: flag(source.show_image, DEFAULT_SETTINGS.show_image),
     price_formula_enabled: flag(source.price_formula_enabled, DEFAULT_SETTINGS.price_formula_enabled),
     price_formula: formulaText(source.price_formula),
+    price_prefix: affix(source.price_prefix),
+    price_suffix: affix(source.price_suffix),
+    background_image: normalizeMediaToken("background", source.background_image),
+    idle_media: normalizeMediaToken("idle", source.idle_media),
+    language: language(source.language),
   };
 }
 
 function formulaText(value: unknown): string {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, 500);
+}
+
+function affix(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.replace(/[\u0000-\u001F\u007F]/g, "").slice(0, 40);
 }
 
 function loadOrCreate<T>(
@@ -332,6 +359,10 @@ export function parseSettings(value: unknown): DisplaySettings {
   if (typeof source.price_formula === "string" && source.price_formula.trim().length > 500) {
     throw new Error("Формула цены слишком длинная");
   }
+  requireAffix(source.price_prefix, "Префикс цены слишком длинный");
+  requireAffix(source.price_suffix, "Суффикс цены слишком длинный");
+  requireStoredMedia("background", source.background_image, "Фоновое изображение не найдено");
+  requireStoredMedia("idle", source.idle_media, "Файл рекламы не найден");
   if (
     settings.sync_time !== integer(source.sync_time, -1, 1, 86400) ||
     settings.name_font_size !== integer(source.name_font_size, -1, 1, 500) ||
@@ -351,6 +382,18 @@ export function parseSettings(value: unknown): DisplaySettings {
     assertPriceFormula(settings.price_formula, rates);
   }
   return settings;
+}
+
+function requireAffix(value: unknown, tooLong: string): void {
+  if (value == null) return;
+  if (typeof value !== "string" || value.length > 40) throw new Error(tooLong);
+}
+
+function requireStoredMedia(kind: MediaKind, value: unknown, message: string): void {
+  if (value == null || value === "") return;
+  if (typeof value !== "string") throw new Error(message);
+  const token = value.trim().toLowerCase();
+  if (normalizeMediaToken(kind, value) !== token) throw new Error(message);
 }
 
 export function parseConnection(value: unknown): ConnectionSettings {
